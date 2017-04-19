@@ -1,0 +1,61 @@
+<!doctype html>
+
+<head>
+  <script src="/static/js/jquery-3.1.1.min.js"></script>
+  <script type="text/javascript">
+    $(function() {
+      $("#search").click(function() {
+        $("#status").text('searching...');
+
+        $.ajax({
+          url: "/netkeiba/search.json",
+          type: "POST",
+          data: {name: $("#name").val()},
+          dataType: "json"
+        }).done(function(data) {
+          //$("#status").text(JSON.stringify(data));
+          if (data.url) {
+            $("#status").html(data.score + ' (<a href=' + data.url + ' target=_blank>' + data.url + '</a>)')
+          } else {
+            $("#status").text("not found");
+          }
+        }).fail(function(data) {
+          $("#status").text('error');
+        });
+      });
+    });
+  </script>
+</head>
+
+<body>
+  <h2>Result</h2>
+  {% if image %}  
+  <div><img src="{{image}}" /></div>
+  {% endif %}
+  <div>
+    Predicted score: {{score}}
+    (type: 
+    {% if score < 0.2 %}
+      sprint
+    {% elif score < 0.4 %}
+      miler
+    {% elif score < 0.6 %}
+      middle
+    {% else %}
+      long
+    {% endif %}
+    )
+  </div>
+  <br/>
+
+  <div>
+    <h4>Score search (netkeiba)</h4>
+    name: <input type="text" name="name" id="name" size=20 />
+    <input type="button" id="search" value="search" />
+    <div id="status"></div>
+  </div>
+
+  <br/>
+
+  <div><a href="/upload">Back</a></div>
+</body>

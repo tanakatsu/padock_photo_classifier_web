@@ -1,0 +1,113 @@
+<html>
+  <head>
+    <script src="/static/js/jquery-3.1.1.min.js"></script>
+    <script>
+      $(function() {
+        var droppable = $("#droppable");
+
+        if (!window.FileReader) {
+          alert("File API is not supported.");
+          return false;
+        }
+
+        var cancelEvent = function(event) {
+          event.preventDefault();
+          event.stopPropagation();
+          return false;
+        }
+
+        droppable.bind("dragenter", cancelEvent);
+        droppable.bind("dragover", cancelEvent);
+
+        var submitFileViaGET = function(data) {
+          $("#status").text('uploading...');
+
+          $.ajax({
+            url: "/predict.json",
+            type: "GET",
+            data: {data: data},
+            dataType: "json"
+          }).done(function(data) {
+            $("#status").text(JSON.stringify(data));
+          }).fail(function(data) {
+            $("#status").text('Upload error!');
+          });
+        }
+
+        var submitFile = function(file) {
+          $("#status").text('uploading...');
+
+          var formdata = new FormData();
+          formdata.append("file", file);
+          $.ajax("/predict.json", {
+              method: "POST",
+              data: formdata,
+              dataType: "json",
+              processData: false,
+              contentType: false
+          }).done(function(data) {
+             $("#status").text(JSON.stringify(data));
+          }).fail(function(data) {
+             $("#status").text('Upload error!');
+          });
+        }
+
+        var handleDroppedFile = function(event) {
+          $("#thumbnails").html('');
+
+          var file = event.originalEvent.dataTransfer.files[0];
+
+          if (file.type.match('image.*')) {
+            var fileReader = new FileReader();
+            fileReader.onload = function(event) {
+              //$("#droppable").text("[" + file.name + "]" + event.target.result);
+              var image = "<img class='thumbnail' width='128' src='" + event.target.result + "'" + "title='" + file.name + "'/>";
+
+              $("#thumbnails").append(image);
+              //submitFileViaGET(event.target.result); // GET
+              submitFile(file); // POST
+            }
+            fileReader.readAsDataURL(file);
+          } else {
+            alert("Image file is only supported.");
+          }
+
+          cancelEvent(event);
+          return false;
+        }
+
+        droppable.bind("drop", handleDroppedFile);
+      });
+    </script>
+  </head>
+
+  <body>
+    <h2>Upload your image</h2>
+
+    <h5>From your computer</h5>
+    <form action = "/predict" method = "POST" 
+      enctype = "multipart/form-data">
+      <input type = "file" name = "file" />
+      <input type = "submit"/>
+    </form>
+
+    <h5>From your computer (drag and drop)</h5>
+    <div id="droppable" style="border: gray solid 0.5em; padding: 2em;">
+     Drop a file here.
+     <div id="thumbnails"></div>
+    </div>
+    <div id="status"></div>
+
+    <h5>From remote url</h5>
+    <form action = "/predict" method = "GET"> 
+      <input type = "text" name = "url" size=80 />
+      <input type = "submit"/>
+    </form>
+
+    <br/>
+
+    <p>
+      Padock photos are available from <a href="http://www.keibado.ne.jp/keibabook/itw/index.html" target="_blank">keibado site</a>. You can use these photos.
+    </p>
+  </body>
+</html>
